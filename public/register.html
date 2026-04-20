@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GODFATHER IV - Headquarters</title>
+    <style>
+        body { background-image: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=2070'); background-size: cover; background-position: center; color: #d4af37; font-family: 'Georgia', serif; text-align: center; padding: 20px; }
+        .container { background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; border: 2px solid #d4af37; }
+        input { padding: 10px; width: 70%; margin: 10px 0; background: #111; border: 1px solid #d4af37; color: white; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { border: 1px solid #d4af37; padding: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GODFATHER IV</h1>
+        <input type="text" id="nameInput" placeholder="Enter Member Name...">
+        <button onclick="addMember()" style="background:#d4af37; padding:10px;">JOIN THE FAMILY</button>
+        <table>
+            <thead><tr><th>Rank</th><th>Name</th><th>Status</th></tr></thead>
+            <tbody id="memberList"><tr><td>Boss</td><td>The Godfather</td><td>Active</td></tr></tbody>
+        </table>
+        <button onclick="document.getElementById('bgm').play()" style="margin-top:15px;">PLAY MUSIC</button>
+    </div>
+    <audio id="bgm" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"></audio>
+    <script>
+        function addMember() {
+            const name = document.getElementById('nameInput').value;
+            if(!name) return;
+            const row = document.getElementById('memberList').insertRow();
+            row.insertCell(0).innerHTML = "Soldier";
+            row.insertCell(1).innerHTML = name;
+            row.insertCell(2).innerHTML = "Loyal";
+            document.getElementById('nameInput').value = "";
+        }
+    </script>
+</body>
+</html>
+

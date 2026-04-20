@@ -1,0 +1,12 @@
+<audio id="bgm" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto" loop></audio>
+<script>
+  function playMusic() {
+    var audio = document.getElementById('bgm');
+    audio.play().catch(function(error) {
+      console.log("ต้องคลิกหน้าจอก่อนเพลงถึงจะดัง: " + error);
+    });
+  }
+  // ให้เพลงดังทันทีที่มีการคลิกส่วนไหนก็ได้ของหน้าจอ
+  document.body.addEventListener('click', playMusic, {once: true});
+</script>
+

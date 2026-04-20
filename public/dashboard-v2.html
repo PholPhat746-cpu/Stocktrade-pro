@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Godfather IV - Dashboard V2</title>
+    <style>
+        body { 
+            /* รูปพื้นหลังเป็นภาพโต๊ะทำงานคลาสสิกแนวมาเฟีย */
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1453733190371-0a9bedd82893?q=80&w=1974&auto=format&fit=crop'); 
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: #d4af37; font-family: 'Times New Roman', serif; text-align: center; padding: 40px 20px;
+        }
+        h1 { font-size: 3rem; letter-spacing: 5px; border-bottom: 2px solid #d4af37; display: inline-block; margin-bottom: 30px; }
+        table { width: 90%; max-width: 800px; margin: 0 auto; border-collapse: collapse; background: rgba(0,0,0,0.85); box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+        th, td { border: 1px solid #444; padding: 15px; text-align: left; }
+        th { background: #d4af37; color: #000; text-transform: uppercase; }
+        .back-btn { margin-top: 30px; display: inline-block; color: #000; background: #d4af37; text-decoration: none; padding: 10px 25px; font-weight: bold; transition: 0.3s; }
+        .back-btn:hover { background: #fff; }
+    </style>
+</head>
+<body>
+    <h1>FAMILY RECORDS</h1>
+    <table id="memberTable">
+        <thead>
+            <tr>
+                <th>Member Name</th>
+                <th>Enlistment Date</th>
+            </tr>
+        </thead>
+        <tbody id="memberList"></tbody>
+    </table>
+    <a href="index-v2.html" class="back-btn">← BACK TO ENLISTMENT</a>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // รหัสชุดเดิมจากโปรเจกต์ Godfather-4 ของคุณ
+        const firebaseConfig = {
+            apiKey: "AIzaSyAS93nsLogjpwAXydXv1uM4...",
+            authDomain: "godfather-4.firebaseapp.com",
+            projectId: "godfather-4",
+            storageBucket: "godfather-4.firebasestorage.app",
+            messagingSenderId: "683413826355",
+            appId: "1:683413826355:web:bd035058703d3a80e1ec46",
+            measurementId: "G-FDY1R00GP2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const q = query(collection(db, "members"), orderBy("joinedAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const tbody = document.getElementById('memberList');
+            tbody.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const date = data.joinedAt ? data.joinedAt.toDate().toLocaleString('th-TH') : "N/A";
+                tbody.innerHTML += `<tr><td>${data.name}</td><td>${date}</td></tr>`;
+            });
+        });
+    </script>
+</body>
+</html>
+

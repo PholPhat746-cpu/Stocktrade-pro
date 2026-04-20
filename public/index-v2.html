@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GODFATHER IV - Ultimate</title>
+    <style>
+        body { background-image: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=2070'); background-size: cover; background-position: center; background-attachment: fixed; color: #d4af37; font-family: 'Georgia', serif; text-align: center; padding: 20px; }
+        .container { background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; border: 2px solid #d4af37; box-shadow: 0 0 20px rgba(212,175,55,0.5); }
+        input { padding: 10px; width: 70%; margin: 10px 0; background: #111; border: 1px solid #d4af37; color: white; border-radius: 5px; }
+        button { background: #d4af37; color: black; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; margin: 5px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { border: 1px solid #d4af37; padding: 10px; }
+        th { background: #d4af37; color: black; }
+        .music-controls { margin-top: 20px; border-top: 1px solid #444; padding-top: 10px; }
+    </style>
+</head>
+<body onload="renderTable()">
+    <div class="container">
+        <h1>GODFATHER IV</h1>
+        <p>"The Family Never Forgets"</p>
+        
+        <input type="text" id="nameInput" placeholder="Enter New Member Name...">
+        <button onclick="addMember()">JOIN THE FAMILY</button>
+
+        <table>
+            <thead><tr><th>Rank</th><th>Name</th><th>Status</th></tr></thead>
+            <tbody id="memberList"></tbody>
+        </table>
+
+        <div class="music-controls">
+            <button onclick="document.getElementById('bgm').play()">▶ PLAY MUSIC</button>
+            <button onclick="document.getElementById('bgm').pause()" style="background:#555; color:white;">⏸ PAUSE</button>
+        </div>
+        <button onclick="clearRecords()" style="margin-top:20px; background:none; color:red; font-size:10px;">Reset All Data</button>
+    </div>
+
+    <audio id="bgm" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"></audio>
+
+    <script>
+        function addMember() {
+            const name = document.getElementById('nameInput').value;
+            if(!name) return alert("Please enter a name!");
+            const members = JSON.parse(localStorage.getItem('mafiaMembers') || '[]');
+            members.push(name);
+            localStorage.setItem('mafiaMembers', JSON.stringify(members));
+            renderTable();
+            document.getElementById('nameInput').value = "";
+        }
+
+        function renderTable() {
+            const members = JSON.parse(localStorage.getItem('mafiaMembers') || '[]');
+            const list = document.getElementById('memberList');
+            list.innerHTML = '<tr><td>Boss</td><td>The Godfather</td><td>Active</td></tr>';
+            members.forEach(m => {
+                const row = list.insertRow();
+                row.insertCell(0).innerHTML = "Soldier";
+                row.insertCell(1).innerHTML = m;
+                row.insertCell(2).innerHTML = "Loyal";
+            });
+        }
+
+        function clearRecords() {
+            if(confirm("Delete all family records?")) {
+                localStorage.removeItem('mafiaMembers');
+                renderTable();
+            }
+        }
+    </script>
+</body>
+</html>
+
+

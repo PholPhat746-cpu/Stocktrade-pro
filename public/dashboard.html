@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Godfather 4 - Dashboard</title>
+    <style>
+        body { background: #000; color: #d4af37; font-family: sans-serif; text-align: center; padding: 20px; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; background: #111; }
+        th, td { border: 1px solid #d4af37; padding: 12px; text-align: left; }
+        th { background: #d4af37; color: #000; }
+        h1 { font-size: 2.5rem; }
+    </style>
+</head>
+<body>
+    <h1>THE FAMILY MEMBERS</h1>
+    <table id="memberTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Joined Date</th>
+            </tr>
+        </thead>
+        <tbody id="memberList"></tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ใช้รหัส Config เดิมของคุณ
+        const firebaseConfig = {
+            apiKey: "AIzaSyAS93nsLogjpwAXydXv1uM4...",
+            authDomain: "godfather-4.firebaseapp.com",
+            projectId: "godfather-4",
+            storageBucket: "godfather-4.firebasestorage.app",
+            messagingSenderId: "683413826355",
+            appId: "1:683413826355:web:bd035058703d3a80e1ec46",
+            measurementId: "G-FDY1R00GP2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ดึงข้อมูลแบบ Real-time
+        const q = query(collection(db, "members"), orderBy("joinedAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const tbody = document.getElementById('memberList');
+            tbody.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const row = `<tr>
+                    <td>${data.name}</td>
+                    <td>${data.joinedAt?.toDate().toLocaleString() || 'N/A'}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        });
+    </script>
+</body>
+</html>
+
