@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, StatusBar, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
+// นำเข้าฟังก์ชันเช็กสถานะสมาชิกที่เราเพิ่งสร้าง
+import { checkSubscriptionStatus, SubscriptionStatus } from '../services/subscription/tracking';
 
 export default function StocktradePro() {
   const [selectedSymbol, setSelectedSymbol] = useState('NASDAQ:AAPL');
+  const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
+
+  // เรียกใช้ฟังก์ชันตรวจสอบสิทธิ์สมาชิกเมื่อเปิดแอป
+  useEffect(() => {
+    checkSubscriptionStatus('user_phol_001').then((status) => {
+      setSubStatus(status);
+    });
+  }, []);
 
   const cleanSymbolName = (symbol: string) => {
     return symbol.includes(':') ? symbol.split(':')[1] : symbol;
@@ -16,7 +26,6 @@ export default function StocktradePro() {
     { name: 'BTC', value: 'BINANCE:BTCUSDT' },
   ];
 
-  // จำลองข้อมูลข่าวสารพร้อมลิงก์สำหรับกดเข้าไปอ่าน (ในอนาคตคุณพลเปลี่ยนเป็น URL ข่าวจริงจาก API ได้เลยครับ)
   const getMockNews = (symbol: string) => {
     const name = cleanSymbolName(symbol);
     return [
@@ -26,7 +35,6 @@ export default function StocktradePro() {
     ];
   };
 
-  // ฟังก์ชันสำหรับกดแล้วลิงก์ออกไปเปิดเบราว์เซอร์เพื่ออ่านข่าวตัวเต็ม
   const handleOpenNews = (url: string) => {
     Linking.openURL(url).catch((err) => alert('ไม่สามารถเปิดลิงก์ข่าวได้ครับ: ' + err));
   };
@@ -83,9 +91,18 @@ export default function StocktradePro() {
           </View>
         </View>
 
-        {/* ================= ส่วนล่าง: TRADE JOURNAL + ข่าวหุ้น ================= */}
+        {/* ================= ส่วนล่าง: TRADE JOURNAL + ระบบสมาชิก ================= */}
         <View style={styles.journalWrapper}>
-          <Text style={styles.journalTitle}>📝 TRADE JOURNAL & REAL-TIME NEWS</Text>
+          
+          {/* แถบหัวข้อหลักที่ดึงสถานะระบบสมาชิกมาโชว์ */}
+          <View style={styles.headerRow}>
+            <Text style={styles.journalTitle}>📝 TRADE JOURNAL & REAL-TIME NEWS</Text>
+            {subStatus?.isActive && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>Premium ${subStatus.planPrice}/mo</Text>
+              </View>
+            )}
+          </View>
           
           <ScrollView style={styles.journalScroll} contentContainerStyle={styles.journalContent}>
             
@@ -127,7 +144,7 @@ export default function StocktradePro() {
               </TouchableOpacity>
             </View>
 
-            {/* 2. ฟีดข่าวสารเพิ่มเติมด้านล่าง (เปลี่ยนการ์ดข่าวเป็นปุ่มกดได้) */}
+            {/* 2. ฟีดข่าวสารเพิ่มเติมด้านล่าง */}
             <View style={styles.newsSection}>
               <Text style={styles.newsSectionTitle}>📰 ข่าวสารและบทวิเคราะห์ล่าสุด ({cleanSymbolName(selectedSymbol)})</Text>
               {getMockNews(selectedSymbol).map((news) => (
@@ -173,11 +190,15 @@ const styles = StyleSheet.create({
   webViewWrapper: { flex: 1 },
   
   journalWrapper: { flex: 45, backgroundColor: '#1e293b', paddingHorizontal: 10, paddingVertical: 6 },
-  journalTitle: { fontSize: 11, fontWeight: 'bold', color: '#60a5fa', marginBottom: 6, paddingHorizontal: 4 },
-  journalScroll: { flex: 1 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
+  journalTitle: { fontSize: 11, fontWeight: 'bold', color: '#60a5fa' },
   
-  // ปรับขอบด้านล่างลดลง 3 มิลลิเมตร (จากเดิม paddingBottom 20 เหลือ 10) เพื่อดึงเนื้อหาข่าวให้แสดงได้ลึกและกว้างเต็มจอขึ้น
-  journalContent: { paddingBottom: 10 }, 
+  // สไตล์ของป้ายสถานะ Premium
+  badge: { backgroundColor: '#22c55e', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: 'bold' },
+  
+  journalScroll: { flex: 1 },
+  journalContent: { paddingBottom: 20 }, 
   
   formBox: { backgroundColor: '#0f172a', padding: 10, borderRadius: 8, gap: 8, borderWidth: 1, borderColor: '#334155' },
   label: { fontSize: 10, color: '#94a3b8', marginBottom: 2 },
