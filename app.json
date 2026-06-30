@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "my-project",
-    "slug": "my-project",
-    "version": "1.0.0",
+    "name": "Stocktrade-pro",
+    "slug": "Stocktrade-pro",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -20,10 +22,17 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.pholphat746.Stocktradepro"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "9032879f-6788-4c2a-9499-d78deee43009"
+      }
+    },
+    "owner": "pholphat746"
   }
 }
