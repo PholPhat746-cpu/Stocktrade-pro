@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, StatusBar, Linking } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, StatusBar, Linking, Modal, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
-// นำเข้าฟังก์ชันเช็กสถานะสมาชิกที่เราเพิ่งสร้าง
 import { checkSubscriptionStatus, SubscriptionStatus } from '../services/subscription/tracking';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function StocktradePro() {
   const [selectedSymbol, setSelectedSymbol] = useState('NASDAQ:AAPL');
   const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  // เรียกใช้ฟังก์ชันตรวจสอบสิทธิ์สมาชิกเมื่อเปิดแอป
   useEffect(() => {
     checkSubscriptionStatus('user_phol_001').then((status) => {
       setSubStatus(status);
@@ -19,11 +20,14 @@ export default function StocktradePro() {
     return symbol.includes(':') ? symbol.split(':')[1] : symbol;
   };
 
+  // รายชื่อหุ้นบนแถบสลับ: เก็บ BTC ไว้เหมือนเดิม และเพิ่ม TRUE กับ CPALL เข้าไปต่อท้ายครับ
   const watchList = [
     { name: 'AAPL', value: 'NASDAQ:AAPL' },
     { name: 'TSLA', value: 'NASDAQ:TSLA' },
     { name: 'NVDA', value: 'NASDAQ:NVDA' },
     { name: 'BTC', value: 'BINANCE:BTCUSDT' },
+    { name: 'TRUE', value: 'SET:TRUE' },
+    { name: 'CPALL', value: 'SET:CPALL' },
   ];
 
   const getMockNews = (symbol: string) => {
@@ -60,7 +64,7 @@ export default function StocktradePro() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         
-        {/* ================= ส่วนบน: กราฟ TRADINGVIEW ================= */}
+        {/* ================= ส่วนบน: กราฟ TRADINGVIEW + แถบสลับหุ้น ================= */}
         <View style={styles.chartContainer}>
           <View style={styles.topBar}>
             <Text style={styles.barText}>สลับกราฟ:</Text>
@@ -91,13 +95,17 @@ export default function StocktradePro() {
           </View>
         </View>
 
-        {/* ================= ส่วนล่าง: TRADE JOURNAL + ระบบสมาชิก ================= */}
+        {/* ================= ส่วนล่าง: TRADE JOURNAL + ข่าวหุ้น ================= */}
         <View style={styles.journalWrapper}>
           
-          {/* แถบหัวข้อหลักที่ดึงสถานะระบบสมาชิกมาโชว์ */}
           <View style={styles.headerRow}>
             <Text style={styles.journalTitle}>📝 TRADE JOURNAL & REAL-TIME NEWS</Text>
-            {subStatus?.isActive && (
+            
+            {!subStatus?.isActive ? (
+              <TouchableOpacity style={styles.premiumBtn} onPress={() => setModalVisible(true)}>
+                <Text style={styles.premiumBtnText}>🚀 อัปเกรด Premium</Text>
+              </TouchableOpacity>
+            ) : (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>Premium ${subStatus.planPrice}/mo</Text>
               </View>
@@ -106,7 +114,6 @@ export default function StocktradePro() {
           
           <ScrollView style={styles.journalScroll} contentContainerStyle={styles.journalContent}>
             
-            {/* 1. ฟอร์มบันทึกการเทรด */}
             <View style={styles.formBox}>
               <View style={styles.row}>
                 <View style={styles.flex1}>
@@ -144,7 +151,6 @@ export default function StocktradePro() {
               </TouchableOpacity>
             </View>
 
-            {/* 2. ฟีดข่าวสารเพิ่มเติมด้านล่าง */}
             <View style={styles.newsSection}>
               <Text style={styles.newsSectionTitle}>📰 ข่าวสารและบทวิเคราะห์ล่าสุด ({cleanSymbolName(selectedSymbol)})</Text>
               {getMockNews(selectedSymbol).map((news) => (
@@ -166,6 +172,23 @@ export default function StocktradePro() {
           </ScrollView>
         </View>
 
+        {/* Modal สมัครสมาชิก */}
+        <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>สมัครสมาชิก Premium</Text>
+              <Text style={styles.modalPrice}>$6.35 / เดือน</Text>
+              <Text style={styles.modalDesc}>- เข้าถึงข้อมูลอินพุตและกราฟเชิงลึก{'\n'}- ไม่มีโฆษณากวนใจ{'\n'}- ข่าวสารหุ้นเสิร์ฟตรงแบบ Real-time</Text>
+              <TouchableOpacity style={styles.payButton} onPress={() => alert('ระบบชำระเงิน Google Play กำลังทำงาน...')}>
+                <Text style={styles.saveButtonText}>สมัครสมาชิกตอนนี้</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelText}>ไว้ทีหลัง</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </SafeAreaView>
   );
@@ -176,10 +199,16 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#020617',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 15,
+    width: screenWidth,
   },
-  container: { flex: 1, flexDirection: 'column', backgroundColor: '#0f172a' },
-  chartContainer: { flex: 55, borderBottomWidth: 1, borderBottomColor: '#334155' }, 
-  topBar: { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#020617', flexDirection: 'row', alignItems: 'center' },
+  container: { 
+    flex: 1, 
+    flexDirection: 'column', 
+    backgroundColor: '#0f172a',
+    width: screenWidth,
+  },
+  chartContainer: { flex: 55, borderBottomWidth: 1, borderBottomColor: '#334155', width: '100%' }, 
+  topBar: { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#020617', flexDirection: 'row', alignItems: 'center', width: '100%' },
   barText: { fontSize: 11, color: '#94a3b8', marginRight: 8, fontWeight: 'bold' },
   watchListScroll: { flexDirection: 'row', gap: 6 },
   button: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 5 },
@@ -187,18 +216,19 @@ const styles = StyleSheet.create({
   inactiveButton: { backgroundColor: '#1e293b' },
   activeButtonText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   inactiveButtonText: { color: '#cbd5e1', fontSize: 11 },
-  webViewWrapper: { flex: 1 },
+  webViewWrapper: { flex: 1, width: '100%' },
   
-  journalWrapper: { flex: 45, backgroundColor: '#1e293b', paddingHorizontal: 10, paddingVertical: 6 },
+  journalWrapper: { flex: 45, backgroundColor: '#1e293b', paddingHorizontal: 10, paddingVertical: 6, width: '100%' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingHorizontal: 4 },
   journalTitle: { fontSize: 11, fontWeight: 'bold', color: '#60a5fa' },
   
-  // สไตล์ของป้ายสถานะ Premium
+  premiumBtn: { backgroundColor: '#eab308', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 5 },
+  premiumBtnText: { color: '#000', fontSize: 10, fontWeight: 'bold' },
   badge: { backgroundColor: '#22c55e', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: 'bold' },
   
   journalScroll: { flex: 1 },
-  journalContent: { paddingBottom: 20 }, 
+  journalContent: { paddingBottom: 10 }, 
   
   formBox: { backgroundColor: '#0f172a', padding: 10, borderRadius: 8, gap: 8, borderWidth: 1, borderColor: '#334155' },
   label: { fontSize: 10, color: '#94a3b8', marginBottom: 2 },
@@ -217,6 +247,15 @@ const styles = StyleSheet.create({
   newsTitle: { color: '#f8fafc', fontSize: 11, fontWeight: '500', lineHeight: 16 },
   newsMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6, alignItems: 'center' },
   newsSource: { color: '#38bdf8', fontSize: 9, fontWeight: 'bold' },
-  newsTime: { color: '#64748b', fontSize: 9 }
+  newsTime: { color: '#64748b', fontSize: 9 },
+
+  modalOverlay: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)' },
+  modalContent: { backgroundColor: '#1e293b', margin: 20, padding: 25, borderRadius: 15, alignItems: 'center' },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  modalPrice: { color: '#22c55e', fontSize: 24, fontWeight: 'bold', marginVertical: 10 },
+  modalDesc: { color: '#cbd5e1', textAlign: 'center', marginBottom: 20 },
+  payButton: { backgroundColor: '#2563eb', padding: 12, width: '100%', borderRadius: 6, alignItems: 'center' },
+  cancelButton: { marginTop: 15 },
+  cancelText: { color: '#94a3b8' }
 });
 
