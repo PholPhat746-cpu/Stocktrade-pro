@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, StatusBar, Linking, Modal, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // คงไว้: ระบบจัดการความจำเครื่อง
 import { checkSubscriptionStatus, SubscriptionStatus } from '../services/subscription/tracking';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -9,27 +10,86 @@ export default function StocktradePro() {
   const [selectedSymbol, setSelectedSymbol] = useState('NASDAQ:AAPL');
   const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  
+  // โค้ดใหม่ที่สอดแทรก: ระบบ Modal เลือกโบรกเกอร์
+  const [brokerModalVisible, setBrokerModalVisible] = useState(false);
+  const [selectedBroker, setSelectedBroker] = useState<string | null>(null);
+
+  // คงไว้: State สำหรับผูกกับกล่องข้อความ Journal
+  const [entry, setEntry] = useState('');
+  const [stopLoss, setStopLoss] = useState('');
+  const [note, setNote] = useState('');
 
   useEffect(() => {
     checkSubscriptionStatus('user_phol_001').then((status) => {
       setSubStatus(status);
     });
-  }, []);
+    loadSavedData(selectedSymbol);
+    checkBrokerStatus(); // ตรวจสอบสถานะโบรกเกอร์เมื่อแอปเปิด
+  }, [selectedSymbol]);
+
+  // ฟังก์ชันสอดแทรก: เช็กว่าเคยเลือกโบรกเกอร์หรือยัง
+  const checkBrokerStatus = async () => {
+    const broker = await AsyncStorage.getItem('user_broker');
+    if (!broker) {
+      setBrokerModalVisible(true);
+    } else {
+      setSelectedBroker(broker);
+    }
+  };
+
+  // ฟังก์ชันสอดแทรก: บันทึกโบรกเกอร์ที่เลือก
+  const handleSelectBroker = async (name: string) => {
+    await AsyncStorage.setItem('user_broker', name);
+    setSelectedBroker(name);
+    setBrokerModalVisible(false);
+    alert(`ยินดีด้วย! คุณได้เลือก ${name} เป็นพันธมิตรเรียบร้อยครับ`);
+  };
+
+  const saveJournalEntry = async () => {
+    const data = { entry, stopLoss, note };
+    try {
+      await AsyncStorage.setItem(`journal_${selectedSymbol}`, JSON.stringify(data));
+      alert(`บันทึกแผนเทรดของ ${cleanSymbolName(selectedSymbol)} เรียบร้อยครับ!`);
+    } catch (e) {
+      alert('บันทึกข้อมูลล้มเหลวครับ');
+    }
+  };
+
+  const loadSavedData = async (symbol: string) => {
+    try {
+      const saved = await AsyncStorage.getItem(`journal_${symbol}`);
+      if (saved) {
+        const { entry, stopLoss, note } = JSON.parse(saved);
+        setEntry(entry);
+        setStopLoss(stopLoss);
+        setNote(note);
+      } else {
+        setEntry('');
+        setStopLoss('');
+        setNote('');
+      }
+    } catch (e) {
+      console.error('โหลดข้อมูลผิดพลาด:', e);
+    }
+  };
 
   const cleanSymbolName = (symbol: string) => {
     return symbol.includes(':') ? symbol.split(':')[1] : symbol;
   };
 
-  // รายชื่อหุ้นบนแถบสลับ: เก็บ BTC ไว้เหมือนเดิม และเพิ่ม TRUE กับ CPALL เข้าไปต่อท้ายครับ
+  // คงไว้: รายชื่อหุ้นระดับโลกครบถ้วนตามสั่ง
   const watchList = [
     { name: 'AAPL', value: 'NASDAQ:AAPL' },
     { name: 'TSLA', value: 'NASDAQ:TSLA' },
     { name: 'NVDA', value: 'NASDAQ:NVDA' },
     { name: 'BTC', value: 'BINANCE:BTCUSDT' },
-    { name: 'TRUE', value: 'SET:TRUE' },
-    { name: 'CPALL', value: 'SET:CPALL' },
+    { name: 'GOOGL', value: 'NASDAQ:GOOGL' },
+    { name: 'MSFT', value: 'NASDAQ:MSFT' },
+    { name: 'META', value: 'NASDAQ:META' },
   ];
 
+  // คงไว้: ข้อมูลข่าวสาร MockNews ชุดเดิมทั้งหมด
   const getMockNews = (symbol: string) => {
     const name = cleanSymbolName(symbol);
     return [
@@ -95,12 +155,16 @@ export default function StocktradePro() {
           </View>
         </View>
 
-        {/* ================= ส่วนล่าง: TRADE JOURNAL + ข่าวหุ้น ================= */}
+        {/* ================= ส่วนล่าง: TRADE JOURNAL + ข่าวหุ้นเดิมครบถ้วน ================= */}
         <View style={styles.journalWrapper}>
           
           <View style={styles.headerRow}>
-            <Text style={styles.journalTitle}>📝 TRADE JOURNAL & REAL-TIME NEWS</Text>
+            {/* โค้ดใหม่สอดแทรก: แสดงโบรกเกอร์ข้างหัวข้อ หรือกดเปิดซ้ำเพื่อเปลี่ยนได้ */}
+            <TouchableOpacity onPress={() => setBrokerModalVisible(true)}>
+              <Text style={styles.journalTitle}>📝 JOURNAL ({selectedBroker || 'ยังไม่เลือกโบรกเกอร์'})</Text>
+            </TouchableOpacity>
             
+            {/* คงไว้: ปุ่ม Premium สีเหลืองตามเดิมเป๊ะ */}
             {!subStatus?.isActive ? (
               <TouchableOpacity style={styles.premiumBtn} onPress={() => setModalVisible(true)}>
                 <Text style={styles.premiumBtnText}>🚀 อัปเกรด Premium</Text>
@@ -124,17 +188,33 @@ export default function StocktradePro() {
                 </View>
                 <View style={styles.flex1}>
                   <Text style={styles.label}>Entry</Text>
-                  <TextInput placeholder="0.00" placeholderTextColor="#475569" style={styles.input} keyboardType="numeric" />
+                  <TextInput 
+                    value={entry} 
+                    onChangeText={setEntry} 
+                    placeholder="0.00" 
+                    placeholderTextColor="#475569" 
+                    style={styles.input} 
+                    keyboardType="numeric" 
+                  />
                 </View>
                 <View style={styles.flex1}>
                   <Text style={styles.label}>Stop Loss</Text>
-                  <TextInput placeholder="0.00" placeholderTextColor="#475569" style={styles.input} keyboardType="numeric" />
+                  <TextInput 
+                    value={stopLoss} 
+                    onChangeText={setStopLoss} 
+                    placeholder="0.00" 
+                    placeholderTextColor="#475569" 
+                    style={styles.input} 
+                    keyboardType="numeric" 
+                  />
                 </View>
               </View>
 
               <View>
                 <Text style={styles.label}>บันทึกแผนและเหตุผลการเข้าเทรด</Text>
                 <TextInput 
+                  value={note}
+                  onChangeText={setNote}
                   placeholder={`พิมพ์โน้ตวิเคราะห์หุ้น ${cleanSymbolName(selectedSymbol)} ...`} 
                   placeholderTextColor="#475569" 
                   style={[styles.input, styles.textArea]} 
@@ -145,12 +225,13 @@ export default function StocktradePro() {
 
               <TouchableOpacity 
                 style={styles.saveButton}
-                onPress={() => alert(`บันทึกแผนเทรดของ ${cleanSymbolName(selectedSymbol)} สำเร็จ`)}
+                onPress={saveJournalEntry}
               >
                 <Text style={styles.saveButtonText}>บันทึกคำสั่งซื้อขายลงคลัง</Text>
               </TouchableOpacity>
             </View>
 
+            {/* คงไว้: ข่าวสาร 3 แถวเต็ม รูปแบบเดิมทุกประการ */}
             <View style={styles.newsSection}>
               <Text style={styles.newsSectionTitle}>📰 ข่าวสารและบทวิเคราะห์ล่าสุด ({cleanSymbolName(selectedSymbol)})</Text>
               {getMockNews(selectedSymbol).map((news) => (
@@ -172,7 +253,26 @@ export default function StocktradePro() {
           </ScrollView>
         </View>
 
-        {/* Modal สมัครสมาชิก */}
+        {/* Modal สอดแทรก: หน้าต่างเลือกโบรกเกอร์พันธมิตรผู้ร่วมลงทุน */}
+        <Modal animationType="fade" transparent={true} visible={brokerModalVisible}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>🤝 ร่วมเป็นพันธมิตรกับเรา</Text>
+              <Text style={styles.modalDesc}>กรุณาเลือกโบรกเกอร์ของคุณ เพื่อเชื่อมต่อรับสิทธิพิเศษในการส่งสัญญาณเทรด:</Text>
+              {['Interactive Brokers', 'eToro', 'Finansia'].map((brokerName) => (
+                <TouchableOpacity 
+                  key={brokerName} 
+                  style={styles.brokerSelectBtn} 
+                  onPress={() => handleSelectBroker(brokerName)}
+                >
+                  <Text style={styles.saveButtonText}>{brokerName}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Modal>
+
+        {/* คงไว้: Modal สมัครสมาชิกพรีเมียมราคา $6.35 ของเดิมเป๊ะ */}
         <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
@@ -255,6 +355,9 @@ const styles = StyleSheet.create({
   modalPrice: { color: '#22c55e', fontSize: 24, fontWeight: 'bold', marginVertical: 10 },
   modalDesc: { color: '#cbd5e1', textAlign: 'center', marginBottom: 20 },
   payButton: { backgroundColor: '#2563eb', padding: 12, width: '100%', borderRadius: 6, alignItems: 'center' },
+  
+  // สไตล์สำหรับปุ่มเลือกโบรกเกอร์โดยเฉพาะ
+  brokerSelectBtn: { backgroundColor: '#1e293b', padding: 12, width: '100%', borderRadius: 6, alignItems: 'center', marginBottom: 8, borderWidth: 1, borderColor: '#334155' },
   cancelButton: { marginTop: 15 },
   cancelText: { color: '#94a3b8' }
 });
